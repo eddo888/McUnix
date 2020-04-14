@@ -27,6 +27,7 @@ setup(
 		'argcomplete',
 		'libxml2-python3',
 		'xmltodict',
+		'pytz',
 		'Baubles',
 		'Perdy',
 		'Argumental',

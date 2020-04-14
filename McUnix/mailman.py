@@ -17,7 +17,7 @@ from email.mime.text import MIMEText
 from email.parser import Parser
 
 from Baubles.Colours import *
-from Tools.yokel import Yokel
+from McUnix.yokel import Yokel
 from Spanners.Squirrel import Squirrel
 from Argumental.Argue import Argue
 
@@ -25,308 +25,327 @@ yokel = Yokel()
 squirrel = Squirrel()
 args = Argue()
 
+
 @args.argument(short='v', flag=True)
-def verbose(): return 
-    
+def verbose():
+	return
+
+
 #________________________________________________________________________________________________________________________________________
-@args.command(single=True,                                                      help='wrapper around the python email')
+@args.command(single=True, help='wrapper around the python email')
 class MailMan(object):
 
-    #....................................................................................................................................
-    _encrypt = False
-    
-    @args.property(short='e', flag=True,                                        help='SSL encryption')
-    def encrypt(self): return self._encrypt
+	#....................................................................................................................................
+	_encrypt = False
 
-    @encrypt.setter
-    def encrypt(self, value): self._encrypt = value
- 
-    #....................................................................................................................................
-    _server = None
-    
-    @args.property(short='s', required=True,                                    help='the server hostname')
-    def server(self): return self._server
-    
-    @server.setter
-    def server(self, value): self._server = value
+	@args.property(short='e', flag=True, help='SSL encryption')
+	def encrypt(self):
+		return self._encrypt
 
-    #....................................................................................................................................
-    _outport = 25
-    
-    @args.property(short='o', type=int, default=_outport,                       help='output port')
-    def outport(self): return self._outport
+	@encrypt.setter
+	def encrypt(self, value):
+		self._encrypt = value
 
-    @outport.setter
-    def outport(self, value): self._outport = value
-        
-    #....................................................................................................................................
-    _inport = 110
-    
-    @args.property(short='i', type=int, default=_inport,                        help='input port')
-    def inport(self): return self._inport
-        
-    @inport.setter
-    def inport(self, value): self._inport = value
-    
-    #....................................................................................................................................
-    _tipe = 'POP3'
-    
-    @args.property(short='t', choices=['IMAP','POP3'], default=_tipe,           help='protocol')
-    def tipe(self): return self._tipe
+	#....................................................................................................................................
+	_server = None
 
-    @tipe.setter
-    def tipe(self, value): self._tipe = value
-    
-    #....................................................................................................................................
-    _username = None
-    
-    @args.property(short='u', required=True,                                    help='login username')
-    def username(self): return self._username
+	@args.property(short='s', required=True, help='the server hostname')
+	def server(self):
+		return self._server
 
-    @username.setter
-    def username(self, value): self._username = value
-    
-    #....................................................................................................................................
-    _password =  None
+	@server.setter
+	def server(self, value):
+		self._server = value
 
-    @args.property(short='p',                                                   help='login password')
-    def password(self): 
-        if not self._password:
-            self.password = squirrel.get('%s:%s'%(self.server, self.username))
-        return self._password
+	#....................................................................................................................................
+	_outport = 25
 
-    @password.setter
-    def password(self, value): self._password = value
-    
-    #....................................................................................................................................
-    def payload(self,part, save=None):
-        return  dict(
-            payload=part.get_payload(),
-            filename=part.get_filename(),
-            type=part.get_content_type()
-        )
-    
+	@args.property(short='o', type=int, default=_outport, help='output port')
+	def outport(self):
+		return self._outport
 
-    #....................................................................................................................................
-    def process(self, message, output=None, save=None):        
-        parser = Parser()
+	@outport.setter
+	def outport(self, value):
+		self._outport = value
 
-        if verbose():
-            print json.dumps(message,indent=4)
+	#....................................................................................................................................
+	_inport = 110
 
-        jm = parser.parsestr(message)
+	@args.property(short='i', type=int, default=_inport, help='input port')
+	def inport(self):
+		return self._inport
 
-        if jm:
-            if verbose():
-                json.dump(jm.keys(), sys.stderr,indent=4)
-                
-            payload = list()
-            if jm.is_multipart():
-                for part in jm.get_payload():
-                    payload.append(self.payload(part,save=save))
+	@inport.setter
+	def inport(self, value):
+		self._inport = value
 
-            jsm = dict(preamble=jm.preamble, payload=payload)
+	#....................................................................................................................................
+	_tipe = 'POP3'
 
-            for key in ['To','From','Subject']:
-                jsm[key] = jm.get(key)
+	@args.property(
+		short='t', choices=['IMAP', 'POP3'], default=_tipe, help='protocol')
+	def tipe(self):
+		return self._tipe
 
-            try:
-                dt = yokel.time(jm['Date'])
-                jsm['Date'] = dt.strftime(yokel.dts)
-            except:
-                jsm['Date'] = jm['Date']
+	@tipe.setter
+	def tipe(self, value):
+		self._tipe = value
 
-            if output:
-                
-                output.write('{:<19} {:<20} -> {:<40}\n'.format(
-                    jsm['Date'][:19],
-                    jsm['From'][:20],
-                    jsm['Subject'][:55]
-                ))
+	#....................................................................................................................................
+	_username = None
 
-        else:
-            sys.stderr.write('%s\n'%message)
-            
-        del parser
+	@args.property(short='u', required=True, help='login username')
+	def username(self):
+		return self._username
 
-        return 
-    
+	@username.setter
+	def username(self, value):
+		self._username = value
 
-    #....................................................................................................................................
-    @args.operation(name='read')
-    @args.parameter(name='delete',     short='d', flag=True,                    help='burn after reading')
-    @args.parameter(name='output',     short='j', flag=True,                    help='output in json format')
-    @args.parameter(name='save',       short='s',                               help='save to this directory')
-    @args.parameter(name='words',      short='w', nargs='*',                    help='killing words')
-    def read(self, 
-        delete=False, 
-        output=None, 
-        save=None,
-        words=[], 
-        find=[]
-    ):
-        '''
+	#....................................................................................................................................
+	_password = None
+
+	@args.property(short='p', help='login password')
+	def password(self):
+		if not self._password:
+			self.password = squirrel.get('%s:%s' % (self.server, self.username))
+		return self._password
+
+	@password.setter
+	def password(self, value):
+		self._password = value
+
+	#....................................................................................................................................
+	def payload(self, part, save=None):
+		return dict(
+			payload=part.get_payload(),
+			filename=part.get_filename(),
+			type=part.get_content_type())
+
+	#....................................................................................................................................
+	def process(self, message, output=None, save=None):
+		parser = Parser()
+
+		if verbose():
+			print(json.dumps(message, indent=4))
+
+		jm = parser.parsestr(message)
+
+		if jm:
+			if verbose():
+				json.dump(list(jm.keys()), sys.stderr, indent=4)
+
+			payload = list()
+			if jm.is_multipart():
+				for part in jm.get_payload():
+					payload.append(self.payload(part, save=save))
+
+			jsm = dict(preamble=jm.preamble, payload=payload)
+
+			for key in ['To', 'From', 'Subject']:
+				jsm[key] = jm.get(key)
+
+			try:
+				dt = yokel.time(jm['Date'])
+				jsm['Date'] = dt.strftime(yokel.dts)
+			except:
+				jsm['Date'] = jm['Date']
+
+			if output:
+
+				output.write('{:<19} {:<20} -> {:<40}\n'.format(jsm['Date'][:19], jsm[
+					'From'][:20], jsm['Subject'][:55]))
+
+		else:
+			sys.stderr.write('%s\n' % message)
+
+		del parser
+
+		return
+
+	#....................................................................................................................................
+	@args.operation(name='read')
+	@args.parameter(
+		name='delete', short='d', flag=True, help='burn after reading')
+	@args.parameter(
+		name='output', short='j', flag=True, help='output in json format')
+	@args.parameter(name='save', short='s', help='save to this directory')
+	@args.parameter(name='words', short='w', nargs='*', help='killing words')
+	def read(self, delete=False, output=None, save=None, words=[], find=[]):
+		'''
         read email from the server
         '''
-        
-        if output:
-            output = open(output,'w')
-            
-        found = []
-        
-        if self.tipe == 'POP3':
 
-            if self.encrypt:
-                poppy = poplib.POP3_SSL(_server(),_inport())
-            else:
-                poppy = poplib.POP3(self.server, self.inport)
+		if output:
+			output = open(output, 'w')
 
-            poppy.user(self.username)
-            poppy.pass_(self.password)
-            numMessages = len(poppy.list()[1])
-            sys.stderr.write('Number of messages = %d\n'%numMessages)
+		found = []
 
-            for m in range(numMessages):
-                sys.stdout.write('\r%d'%m)
-                message =  poppy.retr(m+1)
+		if self.tipe == 'POP3':
 
-                for word in find:
-                    if word.lower() in '\n'.join(message[1]).lower():
-                        found.append('\n'.join(message[1]))
-                        
-                killed = any(word.lower() in '\n'.join(message[1]).lower() for word in words)
+			if self.encrypt:
+				poppy = poplib.POP3_SSL(_server(), _inport())
+			else:
+				poppy = poplib.POP3(self.server, self.inport)
 
-                self.process('\n'.join(message[1]), output=output, save=save)
-                
-                
-                if delete: # or killed:
-                    poppy.dele(m+1)
-                    continue
-                
-            poppy.quit()
+			poppy.user(self.username)
+			poppy.pass_(self.password)
+			numMessages = len(poppy.list()[1])
+			sys.stderr.write('Number of messages = %d\n' % numMessages)
 
-        if self.tipe == 'IMAP':
-            
-            if self.encrypt:
-                eye = imaplib.IMAP4_SSL(self.server, self.inport)
-            else:
-                eye = imaplib.IMAP4(self.server, self.inport)
+			for m in range(numMessages):
+				sys.stdout.write('\r%d' % m)
+				message = poppy.retr(m + 1)
 
-            eye.login(self.username, self.password)
+				for word in find:
+					if word.lower() in '\n'.join(message[1]).lower():
+						found.append('\n'.join(message[1]))
 
-            if verbose():
-                json.dump(eye.list(), sys.stderr, indent=4)
+				killed = any(word.lower() in '\n'.join(message[1]).lower()
+																	for word in words)
 
-            eye.select('inbox')
+				self.process('\n'.join(message[1]), output=output, save=save)
 
-            tipe, data = eye.search(None, 'ALL')
-            
-            for num in data[0].split():
-                tipe, data = eye.fetch(num, '(RFC822)')
-                message = (data[0][1])
-                self.process(message, output=output, save=save)
+				if delete:  # or killed:
+					poppy.dele(m + 1)
+					continue
 
-            eye.close()
-            eye.logout()
-        
-        if output:
-            output.close()
-            
-        return found
+			poppy.quit()
 
+		if self.tipe == 'IMAP':
 
-    #....................................................................................................................................
-    @args.operation(name='send')
-    @args.parameter(name='fromaddr',   short='f', default='eddo888@tpg.com.au', help='sender email')
-    @args.parameter(name='recipients', short='t', nargs='*', required=True,     help='recipient list')
-    @args.parameter(name='subject',    short='s', required=True,                help='email subject')
-    @args.parameter(name='body',       short='b', required=True,                help='text body')
-    @args.parameter(name='preamble',   short='p',                               help='some leading text in lieu of a body')
-    @args.parameter(name='files',      short='a', nargs='*',                    help='list of atttachments')
-    def send(self, 
-        fromaddr=None, 
-        recipients=[], 
-        subject=None, 
-        body=None, 
-        preamble=None, 
-        files=[]
-    ):
-        '''
+			if self.encrypt:
+				eye = imaplib.IMAP4_SSL(self.server, self.inport)
+			else:
+				eye = imaplib.IMAP4(self.server, self.inport)
+
+			eye.login(self.username, self.password)
+
+			if verbose():
+				json.dump(eye.list(), sys.stderr, indent=4)
+
+			eye.select('inbox')
+
+			tipe, data = eye.search(None, 'ALL')
+
+			for num in data[0].split():
+				tipe, data = eye.fetch(num, '(RFC822)')
+				message = (data[0][1])
+				self.process(message, output=output, save=save)
+
+			eye.close()
+			eye.logout()
+
+		if output:
+			output.close()
+
+		return found
+
+	#....................................................................................................................................
+	@args.operation(name='send')
+	@args.parameter(
+		name='fromaddr',
+		short='f',
+		default='eddo888@tpg.com.au',
+		help='sender email')
+	@args.parameter(
+		name='recipients',
+		short='t',
+		nargs='*',
+		required=True,
+		help='recipient list')
+	@args.parameter(
+		name='subject', short='s', required=True, help='email subject')
+	@args.parameter(name='body', short='b', required=True, help='text body')
+	@args.parameter(
+		name='preamble', short='p', help='some leading text in lieu of a body')
+	@args.parameter(
+		name='files', short='a', nargs='*', help='list of atttachments')
+	def send(self,
+										fromaddr=None,
+										recipients=[],
+										subject=None,
+										body=None,
+										preamble=None,
+										files=[]):
+		'''
         send an email
 
         '''
 
-        COMMASPACE = ', '
+		COMMASPACE = ', '
 
-        msg = MIMEMultipart()
-        
-        msg['Subject'] = subject
-        msg['From'] = fromaddr
-        msg['To'] = COMMASPACE.join(recipients)
+		msg = MIMEMultipart()
 
-        if preamble:
-            msg.preamble = preamble
-        
-        if body == '@-':
-            with sys.stdin as fp:
-                body = MIMEText(fp.read())
-                msg.attach(body)
-        elif body.startswith('@'):
-            with open(body[1:], 'r') as fp:
-                body = MIMEText(fp.read())
-                msg.attach(body)
-        else:
-            bt = MIMEText(body)
-            msg.attach(bt)
+		msg['Subject'] = subject
+		msg['From'] = fromaddr
+		msg['To'] = COMMASPACE.join(recipients)
 
-        for file in files:
-            # Assume we know that the image files are all in PNG format
-            # Open the files in binary mode.  Let the MIMEImage class automatically
-            # guess the specific image type.
+		if preamble:
+			msg.preamble = preamble
 
-            ctype, encoding = mimetypes.guess_type(file)
-            if ctype is None or encoding is not None:
-                # No guess could be made, or the file is encoded (compressed), so
-                # use a generic bag-of-bits type.
-                ctype = 'application/octet-stream'
-            maintype, subtype = ctype.split('/', 1)
-            if maintype == 'text':
-                with open(file) as fp:
-                    # Note: we should handle calculating the charset
-                    atch = MIMEText(fp.read(), _subtype=subtype)
-            elif maintype == 'image':
-                with open(file, 'rb') as fp:
-                    atch = MIMEImage(fp.read(), _subtype=subtype)
-            elif maintype == 'audio':
-                with open(file, 'rb') as fp:
-                    atch = MIMEAudio(fp.read(), _subtype=subtype)
-            else:
-                with open(file, 'rb') as fp:
-                    atch = MIMEBase(maintype, subtype)
-                    atch.set_payload(fp.read())
-                    # Encode the payload using Base64
-                    encoders.encode_base64(atch)
+		if body == '@-':
+			with sys.stdin as fp:
+				body = MIMEText(fp.read())
+				msg.attach(body)
+		elif body.startswith('@'):
+			with open(body[1:], 'r') as fp:
+				body = MIMEText(fp.read())
+				msg.attach(body)
+		else:
+			bt = MIMEText(body)
+			msg.attach(bt)
 
-            atch.add_header('Content-Disposition', 'attachment', filename=file)
-            msg.attach(atch)
+		for file in files:
+			# Assume we know that the image files are all in PNG format
+			# Open the files in binary mode.  Let the MIMEImage class automatically
+			# guess the specific image type.
 
-        # Send the email via our own SMTP server.
-        if self.encrypt:
-            s = smtplib.SMTP_SSL(self.server, self.outport)
-        else:
-            s = smtplib.SMTP(self.server, self.outport)
+			ctype, encoding = mimetypes.guess_type(file)
+			if ctype is None or encoding is not None:
+				# No guess could be made, or the file is encoded (compressed), so
+				# use a generic bag-of-bits type.
+				ctype = 'application/octet-stream'
+			maintype, subtype = ctype.split('/', 1)
+			if maintype == 'text':
+				with open(file) as fp:
+					# Note: we should handle calculating the charset
+					atch = MIMEText(fp.read(), _subtype=subtype)
+			elif maintype == 'image':
+				with open(file, 'rb') as fp:
+					atch = MIMEImage(fp.read(), _subtype=subtype)
+			elif maintype == 'audio':
+				with open(file, 'rb') as fp:
+					atch = MIMEAudio(fp.read(), _subtype=subtype)
+			else:
+				with open(file, 'rb') as fp:
+					atch = MIMEBase(maintype, subtype)
+					atch.set_payload(fp.read())
+					# Encode the payload using Base64
+					encoders.encode_base64(atch)
 
-        if self.username and self.password:
-            s.login(self.username, self.password)
-            
-        s.sendmail(fromaddr, msg['To'], msg.as_string())
-        s.quit()
-            
-        return
+			atch.add_header('Content-Disposition', 'attachment', filename=file)
+			msg.attach(atch)
+
+		# Send the email via our own SMTP server.
+		if self.encrypt:
+			s = smtplib.SMTP_SSL(self.server, self.outport)
+		else:
+			s = smtplib.SMTP(self.server, self.outport)
+
+		if self.username and self.password:
+			s.login(self.username, self.password)
+
+		s.sendmail(fromaddr, msg['To'], msg.as_string())
+		s.quit()
+
+		return
 
 
 #________________________________________________________________________________________________________________________________________
-if __name__ == '__main__': 
-    results = args.execute()
-    if results:
-        print result
+if __name__ == '__main__':
+	results = args.execute()
+	if results:
+		print(result)
+
+
