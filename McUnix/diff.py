@@ -5,7 +5,7 @@ import sys, os, re, json, argparse, time, pytz
 from datetime import datetime, timedelta
 from difflib import unified_diff, ndiff
 
-from Baubles.Colours import *
+from Baubles.Colours import Colours
 
 
 #_____________________________________________________
