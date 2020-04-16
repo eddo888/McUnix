@@ -16,7 +16,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.parser import Parser
 
-from Baubles.Colours import *
+from Baubles.Colours import Colours
 from McUnix.yokel import Yokel
 from Spanners.Squirrel import Squirrel
 from Argumental.Argue import Argue
@@ -204,7 +204,7 @@ class MailMan(object):
 				killed = any(word.lower() in '\n'.join(message[1]).lower()
 																	for word in words)
 
-				self.process('\n'.join(message[1]), output=output, save=save)
+				self.process('\n'.join(map(lambda x: x.decode('utf8'), message[1])), output=output, save=save)
 
 				if delete:  # or killed:
 					poppy.dele(m + 1)
