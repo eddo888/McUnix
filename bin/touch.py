@@ -8,6 +8,7 @@ gmt = tz.gettz('UTC')
 ltz = tz.gettz('AEST')
 
 dts = [
+	'YYYY-MM-DD_HH-mm-ss',
 	'YYYY-MM-DD HH:mm:ss',
 	'YYYY-MM-DD',
 ]
@@ -16,6 +17,7 @@ dts = [
 def to_re(dts):
 	for token in 'YMDHms':
 		dts = dts.replace(token, '\d')
+	dts = dts.replace('_', ' ')
 	dts = dts.replace('/', '\-')
 	dts = dts.replace(':', '\.')
 	return re.compile('.*(%s).*' % dts)
