@@ -20,7 +20,11 @@ def to_re(dts):
 
 dts_p = list(map(to_re, dts))
 
-for file in os.listdir('.'):
+files = sys.argv[1:]
+if len(files) == 0:
+	files = os.listdir('.')
+
+for file in files:
 	sys.stdout.write(file)
 
 	for p in dts_p:
