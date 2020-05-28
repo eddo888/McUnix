@@ -7,37 +7,31 @@ from dateutil import tz
 gmt = tz.gettz('UTC')
 ltz = tz.gettz('AEST')
 
-dts = [
-	'YYYY-MM-DD_HH-mm-ss',
-	'YYYY-MM-DD HH:mm:ss',
-	'YYYY-MM-DD',
-]
+dts_date = '(YYYY)[/\-](MM)[/\-](DD)'
+dts_time = '(HH)[:\-](mm)[\-](ss)'
+dts = [ '%s[ _]%s'%(dts_date,dts_time), dts_date ]
 
 
 def to_re(dts):
 	for token in 'YMDHms':
 		dts = dts.replace(token, '\d')
-	dts = dts.replace('_', ' ')
-	dts = dts.replace('/', '\-')
-	dts = dts.replace(':', '\.')
-	return re.compile('.*(%s).*' % dts)
+	return re.compile('.*%s.*' % dts)
 
 
 dts_p = list(map(to_re, dts))
 
 for file in os.listdir('.'):
-	if not file.lower().endswith('.pdf'):
-		continue
-
 	sys.stdout.write(file)
 
 	for p in dts_p:
 		m = p.match(file)
 		if m:
-			dts_v = m.group(1)
-			dts_v = dts_v.replace('/', '-')
-			dts_v = dts_v.replace('.', ':')
-			at = arrow.get(dts_v)
+			if len(m.groups()) == 6:
+				(Y,M,D,h,m,s) = tuple(list(m.groups()))
+			else:
+				(Y,M,D,h,m,s) = tuple(list(m.groups())+['00','00','00'])
+			dts = '%s-%s-%s %s:%s:%s'%(Y,M,D,h,m,s)
+			at = arrow.get(dts)
 			nt = at.naive.replace(tzinfo=ltz)
 			ut = time.mktime(nt.timetuple())
 			if ut != os.stat(file).st_mtime:
