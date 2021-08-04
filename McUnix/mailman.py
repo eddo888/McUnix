@@ -204,7 +204,10 @@ class MailMan(object):
 				killed = any(word.lower() in '\n'.join(message[1]).lower()
 																	for word in words)
 
-				self.process('\n'.join(map(lambda x: x.decode('utf8'), message[1])), output=output, save=save)
+				try:
+					self.process('\n'.join(map(lambda x: x.decode('utf8'), message[1])), output=output, save=save)
+				except:
+					pass
 
 				if delete:  # or killed:
 					poppy.dele(m + 1)
