@@ -194,18 +194,18 @@ class MailMan(object):
 			sys.stderr.write('Number of messages = %d\n' % numMessages)
 
 			for m in range(numMessages):
-				sys.stdout.write('\r%d' % m)
+				sys.stdout.write('\r%d' % m+1)
 				message = poppy.retr(m + 1)
-
+				parts = map(lambda x: x.decode('UTF8'), message[1])
+				
 				for word in find:
-					if word.lower() in '\n'.join(message[1]).lower():
-						found.append('\n'.join(message[1]))
+					if word.lower() in '\n'.join(parts).lower():
+						found.append('\n'.join(parts))
 
-				killed = any(word.lower() in '\n'.join(message[1]).lower()
-																	for word in words)
+				killed = any(word.lower() in '\n'.join(parts).lower() for word in words)
 
 				try:
-					self.process('\n'.join(map(lambda x: x.decode('utf8'), message[1])), output=output, save=save)
+					self.process('\n'.join(parts), output=output, save=save)
 				except:
 					pass
 
@@ -347,6 +347,7 @@ class MailMan(object):
 
 #________________________________________________________________________________________________________________________________________
 if __name__ == '__main__':
+	args.parse('-s mail.tpg.com.au -u eddo8888 read'.split())
 	results = args.execute()
 	if results:
 		print(result)
