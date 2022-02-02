@@ -194,7 +194,7 @@ class MailMan(object):
 			sys.stderr.write('Number of messages = %d\n' % numMessages)
 
 			for m in range(numMessages):
-				sys.stdout.write('\r%d' % m+1)
+				sys.stdout.write('\r%d' % (m+1))
 				message = poppy.retr(m + 1)
 				parts = map(lambda x: x.decode('UTF8'), message[1])
 				
@@ -347,7 +347,7 @@ class MailMan(object):
 
 #________________________________________________________________________________________________________________________________________
 if __name__ == '__main__':
-	args.parse('-s mail.tpg.com.au -u eddo8888 read'.split())
+	#args.parse('-s mail.tpg.com.au -u eddo8888 read'.split())
 	results = args.execute()
 	if results:
 		print(result)
