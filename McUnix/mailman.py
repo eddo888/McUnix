@@ -31,12 +31,13 @@ def verbose():
 	return
 
 
-#________________________________________________________________________________________________________________________________________
+#__________________________________________________________________________________________________________
 @args.command(single=True, help='wrapper around the python email')
 class MailMan(object):
 
-	#....................................................................................................................................
+	#......................................................................................................
 	_encrypt = False
+
 
 	@args.property(short='e', flag=True, help='SSL encryption')
 	def encrypt(self):
@@ -46,7 +47,8 @@ class MailMan(object):
 	def encrypt(self, value):
 		self._encrypt = value
 
-	#....................................................................................................................................
+	
+	#......................................................................................................
 	_server = None
 
 	@args.property(short='s', required=True, help='the server hostname')
@@ -57,7 +59,8 @@ class MailMan(object):
 	def server(self, value):
 		self._server = value
 
-	#....................................................................................................................................
+
+	#......................................................................................................
 	_outport = 25
 
 	@args.property(short='o', type=int, default=_outport, help='output port')
@@ -68,7 +71,8 @@ class MailMan(object):
 	def outport(self, value):
 		self._outport = value
 
-	#....................................................................................................................................
+
+	#......................................................................................................
 	_inport = 110
 
 	@args.property(short='i', type=int, default=_inport, help='input port')
@@ -79,7 +83,8 @@ class MailMan(object):
 	def inport(self, value):
 		self._inport = value
 
-	#....................................................................................................................................
+	
+	#......................................................................................................
 	_tipe = 'POP3'
 
 	@args.property(
@@ -91,7 +96,8 @@ class MailMan(object):
 	def tipe(self, value):
 		self._tipe = value
 
-	#....................................................................................................................................
+	
+	#......................................................................................................
 	_username = None
 
 	@args.property(short='u', required=True, help='login username')
@@ -102,7 +108,8 @@ class MailMan(object):
 	def username(self, value):
 		self._username = value
 
-	#....................................................................................................................................
+
+	#......................................................................................................
 	_password = None
 
 	@args.property(short='p', help='login password')
@@ -115,19 +122,21 @@ class MailMan(object):
 	def password(self, value):
 		self._password = value
 
-	#....................................................................................................................................
+
+	#......................................................................................................
 	def payload(self, part, save=None):
 		return dict(
 			payload=part.get_payload(),
 			filename=part.get_filename(),
 			type=part.get_content_type())
 
-	#....................................................................................................................................
+
+	#......................................................................................................
 	def process(self, message, output=None, save=None):
 		parser = Parser()
 
 		if verbose():
-			print(json.dumps(message, indent=4))
+			print(message)
 
 		jm = parser.parsestr(message)
 
@@ -163,12 +172,11 @@ class MailMan(object):
 
 		return
 
-	#....................................................................................................................................
+
+	#......................................................................................................
 	@args.operation(name='read')
-	@args.parameter(
-		name='delete', short='d', flag=True, help='burn after reading')
-	@args.parameter(
-		name='output', short='j', flag=True, help='output in json format')
+	@args.parameter(name='delete', short='d', flag=True, help='burn after reading')
+	@args.parameter(name='output', short='o', help='output to file, @=stdout')
 	@args.parameter(name='save', short='s', help='save to this directory')
 	@args.parameter(name='words', short='w', nargs='*', help='killing words')
 	def read(self, delete=False, output=None, save=None, words=[], find=[]):
@@ -177,7 +185,10 @@ class MailMan(object):
         '''
 
 		if output:
-			output = open(output, 'w')
+			if output == '@':
+				output = sys.stdout
+			else:
+				output = open(output, 'w')
 
 		found = []
 
@@ -194,7 +205,7 @@ class MailMan(object):
 			sys.stderr.write('Number of messages = %d\n' % numMessages)
 
 			for m in range(numMessages):
-				sys.stdout.write('\r%d' % (m+1))
+				sys.stdout.write('\r%d ' % (m+1))
 				message = poppy.retr(m + 1)
 				parts = map(lambda x: x.decode('UTF8'), message[1])
 				
@@ -231,46 +242,32 @@ class MailMan(object):
 
 			tipe, data = eye.search(None, 'ALL')
 
-			for num in data[0].split():
+			for n in data[0].split():
+				num = n.decode('UTF8')
+				sys.stdout.write('\r%s ' % num)
 				tipe, data = eye.fetch(num, '(RFC822)')
-				message = (data[0][1])
+				message = data[0][1].decode('UTF8')
 				self.process(message, output=output, save=save)
 
 			eye.close()
 			eye.logout()
 
 		if output:
-			output.close()
+			if output is not sys.stdout:
+				output.close()
 
 		return found
 
-	#....................................................................................................................................
+
+	#......................................................................................................
 	@args.operation(name='send')
-	@args.parameter(
-		name='fromaddr',
-		short='f',
-		default='eddo888@tpg.com.au',
-		help='sender email')
-	@args.parameter(
-		name='recipients',
-		short='t',
-		nargs='*',
-		required=True,
-		help='recipient list')
-	@args.parameter(
-		name='subject', short='s', required=True, help='email subject')
+	@args.parameter(name='fromaddr',short='f',default='eddo888@tpg.com.au',help='sender email')
+	@args.parameter(name='recipients',short='t',nargs='*',required=True,help='recipient list')
+	@args.parameter(name='subject', short='s', required=True, help='email subject')
 	@args.parameter(name='body', short='b', required=True, help='text body')
-	@args.parameter(
-		name='preamble', short='p', help='some leading text in lieu of a body')
-	@args.parameter(
-		name='files', short='a', nargs='*', help='list of atttachments')
-	def send(self,
-										fromaddr=None,
-										recipients=[],
-										subject=None,
-										body=None,
-										preamble=None,
-										files=[]):
+	@args.parameter(name='preamble', short='p', help='some leading text in lieu of a body')
+	@args.parameter(name='files', short='a', nargs='*', help='list of atttachments')
+	def send(self,fromaddr=None,recipients=[],subject=None,body=None,preamble=None,files=[]):
 		'''
         send an email
 
@@ -345,9 +342,10 @@ class MailMan(object):
 		return
 
 
-#________________________________________________________________________________________________________________________________________
+#__________________________________________________________________________________________________________
 if __name__ == '__main__':
-	#args.parse('-s mail.tpg.com.au -u eddo8888 read'.split())
+	#args.parse('-s mail.tpg.com.au -u eddo8888 read -o @'.split())
+	#args.parse('-e -t IMAP -s imap.gmail.com -i 993 -u david.edson@gmail.com read -o @'.split())
 	results = args.execute()
 	if results:
 		print(result)
