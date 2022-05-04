@@ -203,7 +203,7 @@ class MailMan(object):
 			poppy.user(self.username)
 			poppy.pass_(self.password)
 			numMessages = len(poppy.list()[1])
-			sys.stderr.write('Number of messages = %d\n' % numMessages)
+			#sys.stderr.write('Number of messages = %d\n' % numMessages)
 
 			for m in range(numMessages):
 				#sys.stdout.write('\r%d ' % (m+1))
