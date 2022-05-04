@@ -208,7 +208,15 @@ class MailMan(object):
 			for m in range(numMessages):
 				#sys.stdout.write('\r%d ' % (m+1))
 				message = poppy.retr(m + 1)
-				parts = map(lambda x: x.decode('UTF8'), message[1])
+				parts = []
+				for part in message[1]:
+					try:
+						parts.append(part.decode('UFT8'))
+					except:
+						try:
+							parts.append(part.decode('UTF16'))
+						except:
+							pass
 				
 				for word in find:
 					if word.lower() in '\n'.join(parts).lower():
@@ -244,10 +252,23 @@ class MailMan(object):
 			tipe, data = eye.search(None, 'ALL')
 
 			for n in data[0].split():
-				num = n.decode('UTF8')
+				try:
+					num = n.decode('UTF8')
+				except:
+					try:
+						num = n.decode('UTF16')
+					except:
+						continue
+					
 				#sys.stdout.write('\r%s ' % num)
 				tipe, data = eye.fetch(num, '(RFC822)')
-				message = data[0][1].decode('UTF8')
+				try:
+					message = data[0][1].decode('UTF8')
+				except:
+					try:
+						message = data[0][1].decode('UTF16')
+					except:
+						continue
 				self.process(message, output=output, save=save)
 
 			eye.close()
