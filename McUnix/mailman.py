@@ -166,7 +166,8 @@ class MailMan(object):
 					'From'][:20], jsm['Subject'][:55]))
 
 		else:
-			sys.stderr.write('%s\n' % message)
+			pass
+			#sys.stderr.write('%s\n' % message)
 
 		del parser
 
@@ -205,7 +206,7 @@ class MailMan(object):
 			sys.stderr.write('Number of messages = %d\n' % numMessages)
 
 			for m in range(numMessages):
-				sys.stdout.write('\r%d ' % (m+1))
+				#sys.stdout.write('\r%d ' % (m+1))
 				message = poppy.retr(m + 1)
 				parts = map(lambda x: x.decode('UTF8'), message[1])
 				
@@ -244,7 +245,7 @@ class MailMan(object):
 
 			for n in data[0].split():
 				num = n.decode('UTF8')
-				sys.stdout.write('\r%s ' % num)
+				#sys.stdout.write('\r%s ' % num)
 				tipe, data = eye.fetch(num, '(RFC822)')
 				message = data[0][1].decode('UTF8')
 				self.process(message, output=output, save=save)
