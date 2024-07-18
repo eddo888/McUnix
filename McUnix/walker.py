@@ -33,11 +33,11 @@ def listFiles(root, patterns='*', recurse=1, return_folders=0):
 						arg.results.append(fullname)
 						break
 			if os.path.islink(fullname):
-				os.path.walk(fullname, visit, arg)
+				os.walk(fullname, visit, arg)
 		# Block recursion if recursion was disallowed
 		if not arg.recurse: files[:] = []
 
-	os.path.walk(root, visit, arg)
+	os.walk(root, visit, arg)
 
 	return arg.results
 
